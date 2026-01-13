@@ -1,0 +1,233 @@
+# auto-git-config Configuration Example
+# ======================================
+#
+# This file demonstrates all configuration options available.
+# Copy this file to ~/.config/auto-git-config/config.toml and customize.
+
+version = "1"
+
+# =============================================================================
+# Settings
+# =============================================================================
+[settings]
+# Enable caching of resolved configurations for faster execution
+cache_enabled = true
+
+# Cache time-to-live in seconds (default: 300 = 5 minutes)
+cache_ttl_seconds = 300
+
+# Default remote to check for remote-based rules (default: "origin")
+default_remote = "origin"
+
+# Directory for generated includeIf config files
+# (default: ~/.config/auto-git-config/gitconfig.d)
+includeif_dir = "~/.config/auto-git-config/gitconfig.d"
+
+# Enable debug logging
+debug = false
+
+# =============================================================================
+# Default Configuration
+# =============================================================================
+# Applied when no rules match, before falling back to global git config.
+# This is optional - if not set, global git config is used directly.
+
+[default.user]
+name = "Default User"
+email = "default@example.com"
+
+# =============================================================================
+# Rules
+# =============================================================================
+# Rules are evaluated in precedence order:
+#   1. Explicit per-repository rules (repo_path) - highest precedence
+#   2. Remote-based rules (remote_host, remote_url, remote_org)
+#   3. Path-based rules (path_prefix, folder_name, etc.) - lowest precedence
+#
+# Within each category:
+#   - Higher priority values are checked first
+#   - If priorities are equal, rules are checked in definition order
+#
+# Multiple conditions in a single rule are AND-ed together.
+
+# -----------------------------------------------------------------------------
+# Example 1: Match by GitHub host
+# -----------------------------------------------------------------------------
+[[rule]]
+name = "github-personal"
+priority = 0
+
+[rule.match]
+remote_host = "github.com"
+
+[rule.config.user]
+name = "Alice Developer"
+email = "alice@personal.dev"
+
+# Disable GPG signing for personal projects
+[rule.config.commit]
+gpgsign = false
+
+# -----------------------------------------------------------------------------
+# Example 2: Match by GitLab host
+# -----------------------------------------------------------------------------
+[[rule]]
+name = "gitlab-work"
+priority = 0
+
+[rule.match]
+remote_host = "gitlab.com"
+
+[rule.config.user]
+name = "Alice WorkAccount"
+email = "alice@company.com"
+
+# Enable GPG signing for work
+[rule.config.commit]
+gpgsign = true
+
+# -----------------------------------------------------------------------------
+# Example 3: Match work projects by path (higher priority than remote)
+# -----------------------------------------------------------------------------
+[[rule]]
+name = "work-directory"
+priority = 10  # Higher than remote-based rules
+
+[rule.match]
+path_prefix = "~/work"
+
+[rule.config.user]
+name = "Alice WorkAccount"
+email = "alice@company.com"
+
+[rule.config.commit]
+gpgsign = true
+
+# Use a specific signing key
+[rule.config.user]
+signingkey = "ABCD1234EFGH5678"
+
+# -----------------------------------------------------------------------------
+# Example 4: Match by organization on GitHub
+# -----------------------------------------------------------------------------
+[[rule]]
+name = "myorg-github"
+priority = 5  # Between path and remote
+
+[rule.match]
+remote_host = "github.com"
+remote_org = "my-organization"
+
+[rule.config.user]
+name = "Alice OrgMember"
+email = "alice@my-organization.org"
+
+# -----------------------------------------------------------------------------
+# Example 5: Match specific repository (highest priority)
+# -----------------------------------------------------------------------------
+[[rule]]
+name = "special-project"
+priority = 100  # Highest priority - always wins if matched
+
+[rule.match]
+repo_path = "~/projects/super-secret-project"
+
+[rule.config.user]
+name = "Anonymous Contributor"
+email = "anon-12345@users.noreply.github.com"
+signingkey = "SPECIAL-KEY-1234"
+
+[rule.config.commit]
+gpgsign = true
+
+# -----------------------------------------------------------------------------
+# Example 6: Match self-hosted GitLab with wildcard
+# -----------------------------------------------------------------------------
+[[rule]]
+name = "company-gitlab"
+priority = 0
+
+[rule.match]
+remote_host = "*.company.internal"
+
+[rule.config.user]
+name = "Alice InternalDev"
+email = "alice@company.internal"
+
+# -----------------------------------------------------------------------------
+# Example 7: Match by folder name pattern (regex)
+# -----------------------------------------------------------------------------
+[[rule]]
+name = "oss-contributions"
+priority = 0
+
+[rule.match]
+folder_pattern = "^(contrib|oss|opensource)-.*"
+
+[rule.config.user]
+name = "Alice OSS"
+email = "alice.oss@gmail.com"
+
+# -----------------------------------------------------------------------------
+# Example 8: Match by remote URL pattern (regex)
+# -----------------------------------------------------------------------------
+[[rule]]
+name = "archived-repos"
+priority = 0
+
+[rule.match]
+remote_url = ".*github\\.com.*/archived-.*"
+
+[rule.config.user]
+name = "Archivist"
+email = "archive@example.com"
+
+# -----------------------------------------------------------------------------
+# Example 9: Combined conditions (AND logic)
+# -----------------------------------------------------------------------------
+[[rule]]
+name = "work-github"
+priority = 15
+
+[rule.match]
+# Both conditions must match
+remote_host = "github.com"
+path_prefix = "~/work"
+
+[rule.config.user]
+name = "Alice WorkGitHub"
+email = "alice.work@company.com"
+
+# -----------------------------------------------------------------------------
+# Example 10: Using extra config for arbitrary git settings
+# -----------------------------------------------------------------------------
+[[rule]]
+name = "custom-settings"
+priority = 0
+
+[rule.match]
+folder_name = "experiment"
+
+[rule.config.user]
+email = "experiment@example.com"
+
+# Set arbitrary git config values
+[rule.config.extra]
+"pull.rebase" = "true"
+"push.autoSetupRemote" = "true"
+"init.defaultBranch" = "main"
+
+# -----------------------------------------------------------------------------
+# Example 11: Disabled rule (for temporary disabling without deletion)
+# -----------------------------------------------------------------------------
+[[rule]]
+name = "old-work"
+enabled = false  # This rule is disabled
+priority = 0
+
+[rule.match]
+path_prefix = "~/old-work"
+
+[rule.config.user]
+email = "old@company.com"
+
