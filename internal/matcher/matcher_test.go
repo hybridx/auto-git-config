@@ -3,8 +3,8 @@ package matcher
 import (
 	"testing"
 
-	"github.com/denair/auto-git-config/internal/config"
-	"github.com/denair/auto-git-config/internal/git"
+	"github.com/hybridx/auto-git-config/internal/config"
+	"github.com/hybridx/auto-git-config/internal/git"
 )
 
 func TestPathPrefixStrategy(t *testing.T) {

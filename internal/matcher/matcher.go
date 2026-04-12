@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/denair/auto-git-config/internal/config"
-	"github.com/denair/auto-git-config/internal/git"
+	"github.com/hybridx/auto-git-config/internal/config"
+	"github.com/hybridx/auto-git-config/internal/git"
 )
 
 // Context holds all information needed for rule matching.

@@ -20,13 +20,13 @@
 ### From Source
 
 ```bash
-go install github.com/denair/auto-git-config/cmd/auto-git-config@latest
+go install github.com/hybridx/auto-git-config/cmd/auto-git-config@latest
 ```
 
 ### Manual Build
 
 ```bash
-git clone https://github.com/denair/auto-git-config.git
+git clone https://github.com/hybridx/auto-git-config.git
 cd auto-git-config
 go build -o auto-git-config ./cmd/auto-git-config
 ```
@@ -62,29 +62,29 @@ go build -o auto-git-config ./cmd/auto-git-config
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         auto-git-config                              │
+│                         auto-git-config                            │
 ├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│   ┌─────────────┐     ┌─────────────┐     ┌─────────────┐          │
-│   │   Detect    │────▶│    Match    │────▶│   Resolve   │          │
-│   │   Context   │     │    Rules    │     │   Config    │          │
-│   └─────────────┘     └─────────────┘     └─────────────┘          │
-│          │                   │                   │                  │
-│          ▼                   ▼                   ▼                  │
-│   • Working dir       • Path-based        • Merge matched          │
-│   • Git repo root     • Remote-based        configs                │
-│   • Git remotes       • Repo-specific     • Apply precedence       │
-│   • Remote parsing    • AND logic         • Return final config    │
-│                                                                      │
+│                                                                    │
+│   ┌─────────────┐     ┌─────────────┐     ┌─────────────┐        │
+│   │   Detect    │────▶│    Match    │────▶│   Resolve   │        │
+│   │   Context   │     │    Rules    │     │   Config    │        │
+│   └─────────────┘     └─────────────┘     └─────────────┘        │
+│          │                   │                   │                │
+│          ▼                   ▼                   ▼                │
+│   • Working dir       • Path-based        • Merge matched        │
+│   • Git repo root     • Remote-based        configs              │
+│   • Git remotes       • Repo-specific     • Apply precedence     │
+│   • Remote parsing    • AND logic         • Return final config  │
+│                                                                    │
 ├─────────────────────────────────────────────────────────────────────┤
-│                        Application Layer                             │
+│                        Application Layer                           │
 ├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│   ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                │
-│   │  IncludeIf  │  │   Local     │  │ Environment │                │
-│   │  Generation │  │   Config    │  │  Variables  │                │
-│   └─────────────┘  └─────────────┘  └─────────────┘                │
-│                                                                      │
+│                                                                    │
+│   ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
+│   │  IncludeIf  │  │   Local     │  │ Environment │              │
+│   │  Generation │  │   Config    │  │  Variables  │              │
+│   └─────────────┘  └─────────────┘  └─────────────┘              │
+│                                                                    │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -322,6 +322,14 @@ auto-git-config cache show   # Show cache for current repo
 auto-git-config cache clear  # Clear all cache entries
 ```
 
+### `auto-git-config version`
+
+Print version, commit, and build date.
+
+```bash
+auto-git-config version
+```
+
 ## Integration Methods
 
 ### 1. Git includeIf (Recommended)
@@ -436,6 +444,94 @@ Resolution results are cached to minimize overhead:
 | **Env variables** | No git modification needed | Doesn't affect all scenarios |
 | **Local config** | Permanent per-repo | Modifies repo config |
 
+---
+
+## AI Agent Setup Prompt
+
+Use the following prompt with any AI coding agent (Cursor, Copilot, Aider, etc.) to have it configure `auto-git-config` for a user:
+
+> **Prompt:**
+>
+> ```text
+> Set up auto-git-config for me. Here's what I need:
+>
+> 1. Install the tool:
+>    go install github.com/hybridx/auto-git-config/cmd/auto-git-config@latest
+>
+> 2. Create the config file at ~/.config/auto-git-config/config.toml using
+>    the TOML schema below. Ask me these questions to fill it in:
+>
+>    - What is your DEFAULT Git name and email? (used when no rules match)
+>    - How many Git identities do you use? For each one:
+>      a. A short name for this identity (e.g. "work", "personal", "oss")
+>      b. The Git user.name and user.email for this identity
+>      c. How to match it — pick one or combine:
+>         - Remote host (e.g. github.com, gitlab.company.com, *.internal.dev)
+>         - Organization/owner on that host (e.g. "my-company")
+>         - Path prefix on disk (e.g. ~/work, ~/oss)
+>         - Folder name or pattern (e.g. "my-project", "^oss-.*")
+>         - Exact repo path (e.g. ~/projects/secret-project)
+>      d. Should commits be GPG-signed for this identity? If yes, the signing key ID.
+>      e. Any extra git config (e.g. pull.rebase=true, core.editor=nvim)
+>    - Do you want caching enabled? (default: yes, TTL 5 min)
+>
+> 3. After writing the config, set up shell integration by adding the
+>    appropriate hook to my shell rc file (~/.zshrc, ~/.bashrc, or
+>    ~/.config/fish/config.fish):
+>
+>    # Zsh
+>    auto_git_config_hook() { eval "$(auto-git-config env 2>/dev/null)"; }
+>    precmd_functions+=(auto_git_config_hook)
+>
+>    # Bash
+>    auto_git_config_hook() { eval "$(auto-git-config env 2>/dev/null)"; }
+>    PROMPT_COMMAND="auto_git_config_hook; $PROMPT_COMMAND"
+>
+>    # Fish
+>    function __auto_git_config_hook --on-variable PWD
+>        auto-git-config env --shell fish 2>/dev/null | source
+>    end
+>
+> 4. Verify by running: auto-git-config explain
+>
+> Config schema reference (TOML):
+>
+>   version = "1"
+>   [settings]
+>     cache_enabled = true | false
+>     cache_ttl_seconds = 300
+>     default_remote = "origin"
+>     debug = false
+>   [default.user]
+>     name = "..."
+>     email = "..."
+>   [[rule]]
+>     name = "rule-name"          # required, unique
+>     priority = 0                # optional, higher = checked first
+>     enabled = true              # optional
+>     [rule.match]                # at least one condition; multiple = AND
+>       repo_path = "~/exact"
+>       remote_host = "github.com"
+>       remote_url = ".*regex.*"
+>       remote_org = "org-name"
+>       path_prefix = "~/work"
+>       path_contains = "substring"
+>       folder_name = "exact-folder"
+>       folder_pattern = "^regex.*"
+>     [rule.config.user]
+>       name = "..."
+>       email = "..."
+>       signingkey = "..."
+>     [rule.config.commit]
+>       gpgsign = true | false
+>     [rule.config.core]
+>       editor = "..."
+>     [rule.config.extra]
+>       "any.git.key" = "value"
+> ```
+
+---
+
 ## Contributing
 
 Contributions welcome! Please:
@@ -447,4 +543,4 @@ Contributions welcome! Please:
 
 ## License
 
-MIT License — see LICENSE file for details.
+MIT License — see [LICENSE](LICENSE) file for details.

@@ -4,9 +4,9 @@ package resolver
 import (
 	"sort"
 
-	"github.com/denair/auto-git-config/internal/config"
-	"github.com/denair/auto-git-config/internal/git"
-	"github.com/denair/auto-git-config/internal/matcher"
+	"github.com/hybridx/auto-git-config/internal/config"
+	"github.com/hybridx/auto-git-config/internal/git"
+	"github.com/hybridx/auto-git-config/internal/matcher"
 )
 
 // Resolution represents the outcome of configuration resolution.

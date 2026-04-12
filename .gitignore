@@ -1,5 +1,5 @@
 # Binaries
-auto-git-config
+/auto-git-config
 *.exe
 *.dll
 *.so

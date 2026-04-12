@@ -1,4 +1,4 @@
-module github.com/denair/auto-git-config
+module github.com/hybridx/auto-git-config
 
 go 1.22
 
