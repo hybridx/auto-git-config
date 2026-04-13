@@ -9,6 +9,7 @@ import (
 
 	"github.com/hybridx/auto-git-config/internal/applier"
 	"github.com/hybridx/auto-git-config/internal/config"
+	"github.com/hybridx/auto-git-config/internal/git"
 	"github.com/hybridx/auto-git-config/internal/resolver"
 	"github.com/hybridx/auto-git-config/pkg/cache"
 	"github.com/spf13/cobra"
@@ -68,11 +69,25 @@ func resolveConfig(cfg *config.Config) (*resolver.Resolution, error) {
 		return nil, fmt.Errorf("failed to get working directory: %w", err)
 	}
 
-	// Check cache if enabled
+	// Check cache if enabled — detect repo first so we can compute a proper
+	// cache key (repo root) and remotes hash for validation.
 	if cfg.Settings.CacheEnabled {
 		configHash, _ := cache.HashFile(config.DefaultConfigPath())
+		cacheKey := workDir
+		remotesHash := ""
+
+		repo, _ := git.DetectRepository(workDir)
+		if repo != nil {
+			cacheKey = repo.Root
+			remoteURLs := make(map[string]string)
+			for name, remote := range repo.Remotes {
+				remoteURLs[name] = remote.URL
+			}
+			remotesHash = cache.HashRemotes(remoteURLs)
+		}
+
 		c := cache.New("", cfg.Settings.CacheTTLSeconds)
-		entry, _ := c.Get(workDir, configHash, "")
+		entry, _ := c.Get(cacheKey, configHash, remotesHash)
 		if entry != nil {
 			return &resolver.Resolution{
 				FinalConfig: entry.ResolvedConfig,
@@ -86,11 +101,16 @@ func resolveConfig(cfg *config.Config) (*resolver.Resolution, error) {
 		return nil, err
 	}
 
-	// Store in cache
+	// Store in cache using repo root as key for deduplication across subdirs
 	if cfg.Settings.CacheEnabled && len(resolution.FinalConfig) > 0 {
 		configHash, _ := cache.HashFile(config.DefaultConfigPath())
 		remotesHash := cache.HashRemotes(resolution.DebugInfo.Remotes)
 		c := cache.New("", cfg.Settings.CacheTTLSeconds)
+
+		cacheKey := workDir
+		if resolution.Repository != nil {
+			cacheKey = resolution.Repository.Root
+		}
 
 		matchedRule := ""
 		if resolution.SelectedRule != nil {
@@ -98,7 +118,7 @@ func resolveConfig(cfg *config.Config) (*resolver.Resolution, error) {
 		}
 
 		_ = c.Set(&cache.Entry{
-			RepoRoot:       workDir,
+			RepoRoot:       cacheKey,
 			ConfigHash:     configHash,
 			ResolvedConfig: resolution.FinalConfig,
 			MatchedRule:    matchedRule,
@@ -400,8 +420,21 @@ func cacheCmd() *cobra.Command {
 				}
 
 				configHash, _ := cache.HashFile(config.DefaultConfigPath())
+				cacheKey := workDir
+				remotesHash := ""
+
+				repo, _ := git.DetectRepository(workDir)
+				if repo != nil {
+					cacheKey = repo.Root
+					remoteURLs := make(map[string]string)
+					for name, remote := range repo.Remotes {
+						remoteURLs[name] = remote.URL
+					}
+					remotesHash = cache.HashRemotes(remoteURLs)
+				}
+
 				c := cache.New("", cfg.Settings.CacheTTLSeconds)
-				entry, err := c.Get(workDir, configHash, "")
+				entry, err := c.Get(cacheKey, configHash, remotesHash)
 				if err != nil {
 					return err
 				}

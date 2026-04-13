@@ -2,9 +2,12 @@
 package applier
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/hybridx/auto-git-config/internal/config"
@@ -190,10 +193,21 @@ func (a *Applier) applyIncludeIf(resolution *resolver.Resolution, result *Result
 	}
 	content.WriteString("\n")
 
+	sections := make(map[string][]string)
+	var sectionOrder []string
 	for key, value := range resolution.FinalConfig {
 		section, subkey := splitConfigKey(key)
+		if _, seen := sections[section]; !seen {
+			sectionOrder = append(sectionOrder, section)
+		}
+		sections[section] = append(sections[section], fmt.Sprintf("    %s = %s\n", subkey, value))
+	}
+	sort.Strings(sectionOrder)
+	for _, section := range sectionOrder {
 		content.WriteString(fmt.Sprintf("[%s]\n", section))
-		content.WriteString(fmt.Sprintf("    %s = %s\n", subkey, value))
+		for _, line := range sections[section] {
+			content.WriteString(line)
+		}
 	}
 
 	// Write the file
@@ -246,21 +260,9 @@ func splitConfigKey(key string) (string, string) {
 	return key, ""
 }
 
-// hashPath creates a short hash of a path for filenames.
+// hashPath creates a short deterministic hash of a path for filenames.
 func hashPath(path string) string {
-	// Simple hash: use first 8 chars of a deterministic string
-	// Replace non-alphanumeric chars and truncate
-	cleaned := strings.Map(func(r rune) rune {
-		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
-			return r
-		}
-		return '-'
-	}, path)
-
-	if len(cleaned) > 32 {
-		cleaned = cleaned[len(cleaned)-32:]
-	}
-
-	return cleaned
+	h := sha256.Sum256([]byte(path))
+	return hex.EncodeToString(h[:])[:16]
 }
 

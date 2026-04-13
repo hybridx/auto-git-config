@@ -99,13 +99,10 @@ path_prefix = "~/work"
 [rule.config.user]
 name = "Alice WorkAccount"
 email = "alice@company.com"
+signingkey = "ABCD1234EFGH5678"
 
 [rule.config.commit]
 gpgsign = true
-
-# Use a specific signing key
-[rule.config.user]
-signingkey = "ABCD1234EFGH5678"
 
 # -----------------------------------------------------------------------------
 # Example 4: Match by organization on GitHub

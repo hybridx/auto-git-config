@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 )
 
@@ -156,11 +157,16 @@ func HashFile(path string) (string, error) {
 
 // HashRemotes creates a hash of remote URLs.
 func HashRemotes(remotes map[string]string) string {
-	// Sort keys for deterministic output
+	keys := make([]string, 0, len(remotes))
+	for name := range remotes {
+		keys = append(keys, name)
+	}
+	sort.Strings(keys)
+
 	h := sha256.New()
-	for name, url := range remotes {
+	for _, name := range keys {
 		h.Write([]byte(name))
-		h.Write([]byte(url))
+		h.Write([]byte(remotes[name]))
 	}
 	return hex.EncodeToString(h.Sum(nil))[:16]
 }

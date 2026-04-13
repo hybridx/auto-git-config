@@ -277,6 +277,13 @@ func DefaultConfigPath() string {
 
 // expandPath expands ~ to the user's home directory.
 func expandPath(path string) string {
+	if path == "~" {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return path
+		}
+		return homeDir
+	}
 	if strings.HasPrefix(path, "~/") {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
